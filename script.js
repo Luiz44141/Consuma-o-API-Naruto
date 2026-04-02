@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // Agora é seguro selecionar, o HTML já carregou!
     const grid = document.getElementById('charactersGrid');
     const searchInput = document.getElementById('searchInput');
     const geoBtn = document.getElementById('geoBtn');
@@ -10,6 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
     async function buscarNinjas() {
         try {
             const resposta = await fetch('https://api.jikan.moe/v4/anime/20/characters');
+            if (!resposta.ok) throw new Error("Erro na API");
             const dados = await resposta.json();
             
             todosOsNinjas = dados.data;
@@ -17,14 +17,19 @@ document.addEventListener("DOMContentLoaded", () => {
             
             mostrarNaTela(todosOsNinjas);
         } catch (erro) {
-            statusText.innerText = "Erro ao carregar a API.";
+            statusText.innerText = "Falha ao invocar os ninjas.";
             console.error(erro);
         }
     }
 
     function mostrarNaTela(lista) {
         grid.innerHTML = '';
-        const listaReduzida = lista.slice(0, 50);
+        if (lista.length === 0) {
+            grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #888; margin-top: 20px;">Nenhum ninja encontrado.</p>`;
+            return;
+        }
+        
+        const listaReduzida = lista.slice(0, 60);
 
         listaReduzida.forEach(item => {
             const ninja = item.character;
@@ -34,52 +39,54 @@ document.addEventListener("DOMContentLoaded", () => {
             card.innerHTML = `
                 <img src="${ninja.images.jpg.image_url}" alt="${ninja.name}" loading="lazy">
                 <h3>${ninja.name}</h3>
-                <span>⭐ ${item.favorites} favoritos</span>
+                <span>⭐ ${item.favorites.toLocaleString('pt-BR')}</span>
             `;
 
             card.addEventListener('click', () => {
-                if (navigator.vibrate) navigator.vibrate(50);
-                alert(`Você selecionou: ${ninja.name}`);
+                if (navigator.vibrate) navigator.vibrate(40);
             });
 
             grid.appendChild(card);
         });
     }
 
+    let timeoutBusca;
     searchInput.addEventListener('input', (evento) => {
-        const textoDigitado = evento.target.value.toLowerCase();
-        const ninjasFiltrados = todosOsNinjas.filter(item => {
-            return item.character.name.toLowerCase().includes(textoDigitado);
-        });
-        mostrarNaTela(ninjasFiltrados);
+        clearTimeout(timeoutBusca);
+        timeoutBusca = setTimeout(() => {
+            const textoDigitado = evento.target.value.toLowerCase().trim();
+            const ninjasFiltrados = todosOsNinjas.filter(item => 
+                item.character.name.toLowerCase().includes(textoDigitado)
+            );
+            mostrarNaTela(ninjasFiltrados);
+        }, 300);
     });
 
     geoBtn.addEventListener('click', () => {
         if ("geolocation" in navigator) {
-            statusText.innerText = "Buscando chakra na sua região...";
+            statusText.innerText = "Rastreando chakra...";
 
             navigator.geolocation.getCurrentPosition((posicao) => {
                 const lat = posicao.coords.latitude.toFixed(4);
                 const lon = posicao.coords.longitude.toFixed(4);
-                alert(`📍 Localização detectada!\nLatitude: ${lat}\nLongitude: ${lon}`);
-                statusText.innerText = "Localização encontrada!";
+                alert(`📍 Localização Detectada!\nLatitude: ${lat}\nLongitude: ${lon}`);
+                statusText.innerText = "Konoha identificada!";
             }, () => {
-                alert("Não foi possível rastrear sua localização.");
-                statusText.innerText = "Busca falhou.";
-            });
+                alert("Falha no rastreio do chakra (GPS).");
+                statusText.innerText = "GPS Indisponível.";
+            }, { timeout: 8000 });
         } else {
-            alert("Seu celular não suporta Geolocalização.");
+            alert("Dispositivo sem suporte a GPS.");
         }
     });
 
-    // Aciona a busca inicial
-    buscarNinjas();
-   
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js')
-                .then(() => console.log('Service Worker registrado com sucesso!'))
-                .catch(erro => console.log('Erro ao registrar o Service Worker:', erro));
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('SW ok:', reg.scope))
+                .catch(err => console.log('SW erro:', err));
         });
     }
+
+    buscarNinjas();
 });

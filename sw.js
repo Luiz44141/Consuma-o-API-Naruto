@@ -1,4 +1,4 @@
-const CACHE_NAME = "ninja-cache-v2"; // Mudei para v2 para forçar o navegador a esquecer o antigo
+const CACHE_NAME = "ninja-cache-v3";
 
 self.addEventListener("install", event => {
     event.waitUntil(
