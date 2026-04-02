@@ -1,32 +1,27 @@
 <!DOCTYPE html>
-<html lang="pt-pt">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Naruto Wiki Mobile</title>
-
+    <title>Ninja World - Enciclopédia</title>
+    
     <link rel="stylesheet" href="style.css">
-
-    <!-- PWA (você vai criar depois) -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#ff6600">
 </head>
-
 <body>
 
-    <header class="app-header">
-        <h1>🍥 Busca Ninja</h1>
-        <input type="text" id="search-input" placeholder="Buscar ninja...">
+    <header>
+        <h1>🍥 Ninja World</h1>
+        <p>Enciclopédia do Universo Naruto</p>
+        
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Buscar ninja...">
+            <button id="geoBtn" title="Rastrear minha localização">📍</button>
+        </div>
+        
+        <p id="status-text">Invocando ninjas...</p>
     </header>
 
-    <main id="characters-container">
-        <p class="status">A invocar ninjas...</p>
-    </main>
-
-    <!-- botão de hardware -->
-    <nav class="bottom-nav">
-        <button id="btn-vibrate">⚡ Vibrar</button>
-    </nav>
+    <main id="charactersGrid" class="grid"></main>
 
     <script src="script.js"></script>
 </body>
