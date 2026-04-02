@@ -1,110 +1,85 @@
-const container = document.getElementById('characters-container');
-const searchInput = document.getElementById('search-input');
-const geoBtn = document.getElementById('btn-geo'); // Novo botão de GPS
+document.addEventListener("DOMContentLoaded", () => {
+    // Agora é seguro selecionar, o HTML já carregou!
+    const grid = document.getElementById('charactersGrid');
+    const searchInput = document.getElementById('searchInput');
+    const geoBtn = document.getElementById('geoBtn');
+    const statusText = document.getElementById('status-text');
 
-const API_URL = "https://api.jikan.moe/v4/anime/20/characters";
+    let todosOsNinjas = [];
 
-let allCharacters = [];
-
-// Fetch dos personagens
-async function getShinobi() {
-    try {
-        const response = await fetch(API_URL);
-        if (!response.ok) throw new Error("Falha ao contactar a aldeia");
-
-        const data = await response.json();
-        allCharacters = data.data;
-
-        render(allCharacters);
-
-    } catch (error) {
-        container.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #ff4444;">Erro: ${error.message}</p>`;
-        console.error(error);
-    }
-}
-
-// Renderização
-function render(list) {
-    container.innerHTML = "";
-
-    if (list.length === 0) {
-        container.innerHTML = `<p style="grid-column: 1/-1; text-align: center;">Nenhum ninja encontrado.</p>`;
-        return;
+    async function buscarNinjas() {
+        try {
+            const resposta = await fetch('https://api.jikan.moe/v4/anime/20/characters');
+            const dados = await resposta.json();
+            
+            todosOsNinjas = dados.data;
+            statusText.innerText = `${todosOsNinjas.length} ninjas encontrados!`;
+            
+            mostrarNaTela(todosOsNinjas);
+        } catch (erro) {
+            statusText.innerText = "Erro ao carregar a API.";
+            console.error(erro);
+        }
     }
 
-    const limitedList = list.slice(0, 50);
+    function mostrarNaTela(lista) {
+        grid.innerHTML = '';
+        const listaReduzida = lista.slice(0, 50);
 
-    limitedList.forEach(item => {
-        const char = item.character;
+        listaReduzida.forEach(item => {
+            const ninja = item.character;
+            const card = document.createElement('div');
+            card.className = 'card';
 
-        const card = document.createElement('div');
-        card.className = 'char-card';
+            card.innerHTML = `
+                <img src="${ninja.images.jpg.image_url}" alt="${ninja.name}" loading="lazy">
+                <h3>${ninja.name}</h3>
+                <span>⭐ ${item.favorites} favoritos</span>
+            `;
 
-        card.innerHTML = `
-            <img 
-                src="${char.images.jpg.image_url}" 
-                alt="Imagem de ${char.name}"
-                loading="lazy"
-                onerror="this.src='fallback.png'"
-            >
-            <h3>${char.name}</h3>
-        `;
+            card.addEventListener('click', () => {
+                if (navigator.vibrate) navigator.vibrate(50);
+                alert(`Você selecionou: ${ninja.name}`);
+            });
 
-        card.addEventListener('click', () => {
-            if (navigator.vibrate) navigator.vibrate(30);
+            grid.appendChild(card);
         });
+    }
 
-        container.appendChild(card);
+    searchInput.addEventListener('input', (evento) => {
+        const textoDigitado = evento.target.value.toLowerCase();
+        const ninjasFiltrados = todosOsNinjas.filter(item => {
+            return item.character.name.toLowerCase().includes(textoDigitado);
+        });
+        mostrarNaTela(ninjasFiltrados);
     });
-}
 
-// Filtro de busca com debounce
-let timeout;
-searchInput.addEventListener('input', (e) => {
-    clearTimeout(timeout);
+    geoBtn.addEventListener('click', () => {
+        if ("geolocation" in navigator) {
+            statusText.innerText = "Buscando chakra na sua região...";
 
-    timeout = setTimeout(() => {
-        const term = e.target.value.toLowerCase();
-        const filtered = allCharacters.filter(item =>
-            item.character.name.toLowerCase().includes(term)
-        );
-        render(filtered);
-    }, 300);
-});
+            navigator.geolocation.getCurrentPosition((posicao) => {
+                const lat = posicao.coords.latitude.toFixed(4);
+                const lon = posicao.coords.longitude.toFixed(4);
+                alert(`📍 Localização detectada!\nLatitude: ${lat}\nLongitude: ${lon}`);
+                statusText.innerText = "Localização encontrada!";
+            }, () => {
+                alert("Não foi possível rastrear sua localização.");
+                statusText.innerText = "Busca falhou.";
+            });
+        } else {
+            alert("Seu celular não suporta Geolocalização.");
+        }
+    });
 
-    //Recurso de Geolocalização
-geoBtn.addEventListener('click', () => {
-    // Verifica se o navegador suporta geolocalização
-    if ("geolocation" in navigator) {
-        geoBtn.innerHTML = '⏳'; // Feedback de carregando
-        
-        navigator.geolocation.getCurrentPosition(
-            // Sucesso
-            (position) => {
-                const lat = position.coords.latitude.toFixed(4);
-                const lon = position.coords.longitude.toFixed(4);
-                
-                alert(`📍 Posição Ninja Detectada!\nLatitude: ${lat}\nLongitude: ${lon}\n\nMissão Rank S autorizada na sua região!`);
-                geoBtn.innerHTML = '📍';
-            },
-            // Erro
-            (error) => {
-                console.warn(`Erro de GPS: ${error.message}`);
-                alert('Não conseguimos rastrear o seu chakra (GPS desativado ou sem permissão).');
-                geoBtn.innerHTML = '📍';
-            },
-            // Opções
-            { enableHighAccuracy: true, timeout: 5000 }
-        );
-    } else {
-        alert("Seu dispositivo não suporta rastreamento ninja (Geolocalização).");
+    // Aciona a busca inicial
+    buscarNinjas();
+   
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Service Worker registrado com sucesso!'))
+                .catch(erro => console.log('Erro ao registrar o Service Worker:', erro));
+        });
     }
 });
-
-
-if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js").catch(err => console.log("Erro no SW:", err));
-}
-
-// Inicializa a chamada
-getShinobi();

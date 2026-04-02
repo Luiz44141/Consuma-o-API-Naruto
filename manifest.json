@@ -1,9 +1,9 @@
 {
-  "name": "Busca Ninja",
-  "short_name": "Ninja",
+  "name": "Ninja World Enciclopédia",
+  "short_name": "Ninja World",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#18182b",
+  "background_color": "#1a1a2e",
   "theme_color": "#ff6600",
   "icons": [
     {
